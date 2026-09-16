@@ -1,0 +1,15 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+
+# Arduino build artifacts (if you ever build via CLI or export binaries)
+build/
+*.hex
+*.elf
+
+# Backup files some editors create
+*~
+*.bak
