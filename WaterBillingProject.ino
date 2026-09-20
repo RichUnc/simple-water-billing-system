@@ -349,4 +349,3 @@ void endSession() {
   showIdle();
 }
 
-AS PER from this code can you tabulate the connections to each of the tools used in thius project fam 

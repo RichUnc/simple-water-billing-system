@@ -2,54 +2,70 @@
 
 ## Overview
 
-This is a simple, microcontroller based (Arduino) water billing system that aims to raise awareness on water usage by assigning users a limited amount of water litres in form of credits. Each user is given a RFID card which acts like the user's identity when using the system. The specific UID is read and matched with the specific user account when the card is scanned, and then the user's details (name, credit balance) are displayed on the LCD. The user may then interact with the system by the means of a keypad, through which the specific keys have specific functionalities, one being to allow the user to request a specific amount of water after the system prompts him/her to do so. If the litres required <= available credits in balance, the system allows water to be dipensed, deducting the taken litres from the balance. The flow rate is measured by a YF-S201 sensor that ensures the exact amount of litres are dispensed.
+This is a simple, microcontroller-based (Arduino) water billing system designed to raise awareness of water usage by assigning users a limited amount of water in the form of credits. Each user is given an RFID card that acts as their identity when using the system. The specific UID is read and matched to the corresponding user account when the card is scanned, and the user details (name and credit balance) are displayed on the LCD. The user can then interact with the system through a keypad, where specific keys provide different functions. One such function allows the user to request a specific amount of water after being prompted to do so. If the requested litres are less than or equal to the available credits in the balance, the system allows water to be dispensed and deducts the used litres from the balance. The flow rate is measured by a YF-S201 sensor, which ensures that the exact amount of water is dispensed.
 
 ## Working mechanism (so far)
 
-- A user is given a RFID card with a specific UID that represents the user's identity when interacting with the system.
-- Once the person swipes the card on the RFID reader, the system does a search-and-match in the information stored in the program. If true, the user's details (age and credit balance) are displayed.
-- Once displayed, the user will be prompted to enter the litres he/she wants to recieve by the means of a 4x3 keypad (using the keys `0-9`). If entered litres > present, then a notification will pop up on the LCD telling the user to recharge and no water will flow/be dispensed.
-- If entered litres <= account balance, the relay valve will open and thus allowing the flow of water. Once the required amount is ejected, the solenoid valve closes due to the switching off of the relay, hence shutting the water flow.
-    -**Flow measurement:** The YF-S201 generates pulses as water passes through the sensor, and the program counts these pulses using an interrupt on Arduino UNO pin D2: ```cpp
-                                     attachInterrupt(digitalPinToInterrupt(FLOW_PIN), pulseCounter, FALLING);
-                                     ```
-    The current calibration factor being: ```cpp
-                                          const float calibrationFactor = 450.0;
-                                          ```
+- A user is given an RFID card with a specific UID that represents their identity when interacting with the system.
+- Once the person swipes the card on the RFID reader, the system searches for and matches the UID in the information stored in the program. If there is a match, the user details (name and credit balance) are displayed.
+- After this, the user is prompted to enter the number of litres they want to receive using the 4×3 keypad (using keys `0-9`). If the entered litres exceed the available balance, a notification appears on the LCD informing the user to recharge, and no water is dispensed.
+- If the entered litres are less than or equal to the available balance, the relay valve opens, allowing water to flow. Once the required amount has been dispensed, the solenoid valve closes because the relay switches off, stopping the water flow.
+  - Flow measurement: The YF-S201 generates pulses as water passes through the sensor, and the program counts these pulses using an interrupt on Arduino UNO pin D2:
+
+    ```cpp
+    attachInterrupt(digitalPinToInterrupt(FLOW_PIN), pulseCounter, FALLING);
+    ```
+
+    The current calibration factor is:
+
+    ```cpp
+    const float calibrationFactor = 450.0;
+    ```
+
     The actual calibration factor may vary depending on various factors, so for accurate billing, the sensor should be calibrated experimentally before deployment.
 - The amount of water dispensed is then deducted from the user's balance.
-- Special keys have been implemented;
-    **- the `*` key:- when pressed *once*, the entered litres is cleared (in case on has entered the wrong amount of litres), when pressed *twice* (within 700ms), an emergency stop is triggered; the system stop dispensing on the spot, "EMERGENCY STOP" is displayed, the current session is terminated, returning the user to the "Scan card..." stage.**
-    **- the `#` key:- when pressed *once*, the entered amount is confirmed and the system proceeds with dispensing. When pressed *twice* (within 700ms), the credits of the users' are reset, and the user is returned to the litre-entry screen.** (The "double `#` press for the resetting of credits function is meant for the current prototype. Upon further development, this function will be removed.)
-- So far, this has only been implemented for two accounts, i.e.: two cards;
-    **- Joan Wambura - 10L credits**
-    **- Prof. Nuhu - 20L credits**
+- Special keys have been implemented:
+  - The `*` key: When pressed once, the entered litres are cleared if the user has entered the wrong amount. When pressed twice within 700 ms, an emergency stop is triggered. The system immediately stops dispensing, displays "EMERGENCY STOP", terminates the current session, and returns the user to the "Scan card..." stage.
+  - The `#` key: When pressed once, the entered amount is confirmed and the system proceeds with dispensing. When pressed twice within 700 ms, the user's credits are reset and the user is returned to the litre-entry screen. The double `#` press for resetting credits is intended for the current prototype and will be removed in future development.
+- So far, this has only been implemented for two accounts, i.e. two cards:
+  - Joan Wambura — 10 L credits
+  - Prof. Nuhu — 20 L credits
 
 ### Safety features
 
-The system includes a three-minute dispensing timeout: ```cpp
-         if (millis() - startTime > 180000)
-         ```
-which prevents the valve from remaining open indefinitely if the expected flow measurement is not received.
-The relay should also be connected appropriately for the voltage/current requirements of the solenoid valve.
+The system includes a three-minute dispensing timeout:
+
+```cpp
+if (millis() - startTime > 180000)
+```
+
+This prevents the valve from remaining open indefinitely if the expected flow measurement is not received. The relay should also be connected appropriately for the voltage/current requirements of the solenoid valve.
 
 ### Example of the program in use
 
-If a user has: ```text
-               20 L
-               ```
+If a user has:
 
-and enters: ```text
-            5#
-            ```
+```text
+20 L
+```
 
-the system attempts to dispense: ```text
-                                 5 L
-                                 ```
+and enters:
 
-After successful dispensing: ```text
-                             Remaining: 15 L
-                             ```
+```text
+5#
+```
+
+the system attempts to dispense:
+
+```text
+5 L
+```
+
+After successful dispensing:
+
+```text
+Remaining: 15 L
+```
 
 ## Requirements and everything else needed to be done
 
@@ -59,7 +75,7 @@ After successful dispensing: ```text
 | --- | ---: | --- |
 | Arduino UNO | 1 | Main microcontroller |
 | MFRC522 RFID Reader | 1 | Reads RFID card UIDs |
-| RFID Cards/Tags | 2 (currently. More to be added in later versions) | User identification |
+| RFID Cards/Tags | 2 (currently; more to be added in later versions) | User identification |
 | 16×2 I2C LCD | 1 | Displays system/user information |
 | 4×3 Matrix Keypad | 1 | User input |
 | YF-S201 Flow Sensor | 1 | Measures water flow |
@@ -69,104 +85,114 @@ After successful dispensing: ```text
 | Jumper wires | As required | Connections |
 | Water tubing/plumbing | As required | Water path |
 
-**NB:** This code was written for an Arduino *UNO*.
+> Note: This code was written for an Arduino UNO.
 
 ### Software requirements
 
 An **Arduino IDE 2.x (2.3.x or newer)** is recommended for this project.
-    - The following Arduino libraries are required:
 
-    | Library | Purpose |
-    | --- | --- |
-    | `SPI` | Communication between the Arduino and MFRC522 RFID reader |
-    | `MFRC522` | RFID card detection and UID reading |
-    | `Wire` | I2C communication |
-    | `LiquidCrystal_I2C` | Controls the I2C LCD |
-    | `Keypad` | Controls the 4×3 matrix keypad |
-        - of which `SPI` and `Wire` are built-in libraries which are normally included with the Arduino IDE and do not normally need to be installed separately. The others can be installed through **Arduino IDE → Library Manager**; where one has to search for and install: ```text
-                 MFRC522
-                 LiquidCrystal I2C
-                 Keypad
-                 ```
-        as this code uses: ```cpp
-                           #include <SPI.h>
-                           #include <MFRC522.h>
-                           #include <Wire.h>
-                           #include <LiquidCrystal_I2C.h>
-                           #include <Keypad.h>
-                           ```
-    - Choosing a board: In the Arduino IDE, select: **Tools → Board → Arduino AVR Boards → Arduino Uno**, then select the COM port corresponding to the connected Arduino, i.e.: **Tools → Port → [Arduino COM Port]**. The exact COM port will depend on the computer.
+- The following Arduino libraries are required:
+
+| Library | Purpose |
+| --- | --- |
+| `SPI` | Communication between the Arduino and MFRC522 RFID reader |
+| `MFRC522` | RFID card detection and UID reading |
+| `Wire` | I2C communication |
+| `LiquidCrystal_I2C` | Controls the I2C LCD |
+| `Keypad` | Controls the 4×3 matrix keypad |
+
+- `SPI` and `Wire` are built-in libraries that are normally included with the Arduino IDE and do not normally need to be installed separately. The others can be installed through **Arduino IDE → Library Manager** by searching for and installing:
+
+  ```text
+  MFRC522
+  LiquidCrystal I2C
+  Keypad
+  ```
+
+  This code uses:
+
+  ```cpp
+  #include <SPI.h>
+  #include <MFRC522.h>
+  #include <Wire.h>
+  #include <LiquidCrystal_I2C.h>
+  #include <Keypad.h>
+  ```
+
+- Choosing a board: In the Arduino IDE, select **Tools → Board → Arduino AVR Boards → Arduino Uno**, then select the COM port corresponding to the connected Arduino. This is done from **Tools → Port → [Arduino COM Port]**. The exact COM port will depend on the computer.
 
 ### Wiring
 
-1. ***MFRC522 RFID Reader***
+#### 1. MFRC522 RFID Reader
 
-    | MFRC522 | Arduino UNO |
-    | --- | --- |
-    | SDA / SS | D10 |
-    | SCK | D13 |
-    | MOSI | D11 |
-    | MISO | D12 |
-    | RST | D9 |
-    | 3.3V | 3.3V |
-    | GND | GND |
+| MFRC522 | Arduino UNO |
+| --- | --- |
+| SDA / SS | D10 |
+| SCK | D13 |
+| MOSI | D11 |
+| MISO | D12 |
+| RST | D9 |
+| 3.3V | 3.3V |
+| GND | GND |
 
-    **Important:** The MFRC522 module is a **3.3V device**. Do not power its VCC from the Arduino UNO's 5V pin.
+> **Important:** The MFRC522 module is a **3.3V device**. Do not power its VCC from the Arduino UNO's 5V pin.
 
-2. ***16×2 I2C LCD***
+#### 2. 16×2 I2C LCD
 
-    | LCD | Arduino UNO |
-    | --- | --- |
-    | VCC | 5V |
-    | GND | GND |
-    | SDA | A4 |
-    | SCL | A5 |
+| LCD | Arduino UNO |
+| --- | --- |
+| VCC | 5V |
+| GND | GND |
+| SDA | A4 |
+| SCL | A5 |
 
-    The code assumes the LCD I2C address is: ```text
-                                             0x27
-                                             ```
+The code assumes the LCD I2C address is:
 
-    So if the LCD does not respond, its address may be different and may need to be changed in the code.
+```text
+0x27
+```
 
-3. ***4×3 Keypad***
+If the LCD does not respond, its address may be different and may need to be changed in the code.
 
-    | Keypad | Arduino UNO |
-    | --- | --- |
-    | Row 1 | A0 |
-    | Row 2 | A1 |
-    | Row 3 | A2 |
-    | Row 4 | A3 |
-    | Column 1 | D3 |
-    | Column 2 | D4 |
-    | Column 3 | D5 |
+#### 3. 4×3 Keypad
 
-4. ***YF-S201 Flow Sensor***
+| Keypad | Arduino UNO |
+| --- | --- |
+| Row 1 | A0 |
+| Row 2 | A1 |
+| Row 3 | A2 |
+| Row 4 | A3 |
+| Column 1 | D3 |
+| Column 2 | D4 |
+| Column 3 | D5 |
 
-    | YF-S201 | Arduino UNO |
-    | --- | --- |
-    | Signal | D2 |
-    | VCC | 5V* |
-    | GND | GND |
+#### 4. YF-S201 Flow Sensor
 
-    \*Follow the voltage requirements of the specific YF-S201 module being used.
+| YF-S201 | Arduino UNO |
+| --- | --- |
+| Signal | D2 |
+| VCC | 5V* |
+| GND | GND |
 
-    The signal is connected to **D2**, which is used as an external interrupt on the Arduino UNO.
+*Follow the voltage requirements of the specific YF-S201 module being used.
 
-5. ***Relay Module***
+The signal is connected to **D2**, which is used as an external interrupt on the Arduino UNO.
 
-    | Relay | Arduino UNO |
-    | --- | --- |
-    | IN | D7 |
-    | VCC | 5V |
-    | GND | GND |
+#### 5. Relay Module
 
-    The relay is used to control the solenoid valve.
+| Relay | Arduino UNO |
+| --- | --- |
+| IN | D7 |
+| VCC | 5V |
+| GND | GND |
 
-    **Do not connect the solenoid valve directly to an Arduino GPIO pin.**
+The relay is used to control the solenoid valve.
 
-    The valve should have an appropriate external power supply, with the relay acting as the switching device.
+> **Do not connect the solenoid valve directly to an Arduino GPIO pin.**
 
-#### Pin Summary
+The valve should have an appropriate external power supply, with the relay acting as the switching device.
+
+#### Pin summary
 
 | Arduino Pin | Component | Function |
 | --- | --- | --- |
@@ -187,7 +213,7 @@ An **Arduino IDE 2.x (2.3.x or newer)** is recommended for this project.
 | A4 | LCD | I2C SDA |
 | A5 | LCD | I2C SCL |
 
-***NB: Registered users so far (in this prototype version)***
+> **NB: Registered users so far (in this prototype version)**
 
 | User | RFID UID | Initial Credits |
 | --- | --- | ---: |
@@ -196,17 +222,25 @@ An **Arduino IDE 2.x (2.3.x or newer)** is recommended for this project.
 
 To add another user, add their UID, name, and starting credits to the source code and include the UID in the authentication logic.
 
-### Tip: Finding an RFID's card UID (when registering a new one)
+### Tip: Finding an RFID card UID (when registering a new one)
 
-Before registering a new card, use an MFRC522 UID-reading sketch to scan the card. The Serial Monitor will display something similar to: ```text
-                                           Card UID: A3 B1 6F 94
-                                           ```
-The UID must then be converted into the format used by the program, i.e.: ```text
-                      A3 B1 6F 94
-                      ```
-becomes: ```cpp
-         const String USER_UID = "A3B16F94";
-         ```
+Before registering a new card, use an MFRC522 UID-reading sketch to scan the card. The Serial Monitor will display something similar to:
+
+```text
+Card UID: A3 B1 6F 94
+```
+
+The UID must then be converted into the format used by the program, i.e.:
+
+```text
+A3 B1 6F 94
+```
+
+becomes:
+
+```cpp
+const String USER_UID = "A3B16F94";
+```
 
 ### Uploading the program
 
@@ -218,16 +252,24 @@ becomes: ```cpp
 6. Select the correct COM port under **Tools → Port**.
 7. Click **Verify** to compile the program.
 8. If compilation succeeds, click **Upload**.
-9. Open **Serial Monitor** at: ```text
-                               9600 baud
-                               ```
-The Serial Monitor should display: ```text
-                                   System Ready
-                                   ```
-The LCD should display: ```text
-                        Water Billing
-                        Scan Card...
-                        ```
+9. Open the Serial Monitor at:
+
+   ```text
+   9600 baud
+   ```
+
+   The Serial Monitor should display:
+
+   ```text
+   System Ready
+   ```
+
+   The LCD should display:
+
+   ```text
+   Water Billing
+   Scan Card...
+   ```
 
 ### Using the system
 
@@ -245,49 +287,63 @@ The LCD should display: ```text
 
 ### Troubleshooting
 
-- **RFID does not detect cards**: Check if -MFRC522 is powered from 3.3V.
-                                           - SDA is connected to D10.
-                                           - RST is connected to D9.
-                                           - SPI connections are correct.
-                                           - `MFRC522` library is installed.
-                                           - The card is within the reader's operating range.
-- **LCD is blank**: Check -VCC and GND.
-                          - SDA → A4.
-                          - SCL → A5.
-                          - LCD I2C address.
-As this code currently uses: ```cpp
-                             LiquidCrystal_I2C lcd(0x27, 16, 2);
-                             ```
-and some LCD modules use another address such as `0x3F`.
-- **Keypad doesn't work**: Check that the row and column wires match, i.e.: ```cpp
-                          byte rowPins[ROWS] = {A0, A1, A2, A3};
-                          byte colPins[COLS] = {3, 4, 5};
-                          ```
-- **Incorrect flow measurement:** The YF-S201 calibration factor may need adjustment, i.e.: ```cpp
-                                              const float calibrationFactor = 450.0;
-                                              ```
-Measure a known volume of water and adjust the factor accordingly.
-- **Relay behaves incorrectly**: Check the relay module's trigger logic. Some relay modules are *active LOW*, while this program currently assumes an *active HIGH* control signal, i.e.: ```cpp
-                                    digitalWrite(RELAY_PIN, HIGH);
-                                    ```
-If your relay is active LOW, the relay logic will need to be inverted.
+- **RFID does not detect cards:** Check if:
+  - The MFRC522 is powered from 3.3V.
+  - SDA is connected to D10.
+  - RST is connected to D9.
+  - SPI connections are correct.
+  - The `MFRC522` library is installed.
+  - The card is within the reader's operating range.
+- **LCD is blank:** Check:
+  - VCC and GND.
+  - SDA → A4.
+  - SCL → A5.
+  - LCD I2C address.
+
+  As this code currently uses:
+
+  ```cpp
+  LiquidCrystal_I2C lcd(0x27, 16, 2);
+  ```
+
+  Some LCD modules use another address such as `0x3F`.
+- **Keypad doesn't work:** Check that the row and column wires match, i.e.:
+
+  ```cpp
+  byte rowPins[ROWS] = {A0, A1, A2, A3};
+  byte colPins[COLS] = {3, 4, 5};
+  ```
+- **Incorrect flow measurement:** The YF-S201 calibration factor may need adjustment, i.e.:
+
+  ```cpp
+  const float calibrationFactor = 450.0;
+  ```
+
+  Measure a known volume of water and adjust the factor accordingly.
+- **Relay behaves incorrectly:** Check the relay module's trigger logic. Some relay modules are *active LOW*, while this program currently assumes an *active HIGH* control signal, i.e.:
+
+  ```cpp
+  digitalWrite(RELAY_PIN, HIGH);
+  ```
+
+  If your relay is active LOW, the relay logic will need to be inverted.
 
 ## Anticipated
 
-- Support for multiple users: increase the system's flexibility to support more people.
+- Support for multiple users to increase the system's flexibility.
 - A registration function that allows new users to be added to the system and associated with their respective RFID cards.
-- Creation of an offline app that will act as a credit recharge system. Users will be able to request or purchase additional credits from the supplier. The application will be integrated with the system.
-- The creation/presence of the "supplier's side" for suppliers' to create their accounts and manage users as well as replenish their credits through them within that offline app.
-- Usage records: Store each user's water consumption history, including the amount of water used and remaining credits and displaying it to the user when prompted.
-- Persistent user accounts: Store user information and credit balances in non-volatile memory or an external database (Maybe even in a cloud) so that information is not lost when the Arduino is restarted.
-- Monitoring and reporting: Provide the supplier with information about water consumption, remaining credits, and overall system usage.
+- Creation of an offline app that acts as a credit recharge system, allowing users to request or purchase additional credits from the supplier. The application will be integrated with the system.
+- The creation or presence of a supplier-side interface so suppliers can create accounts, manage users, and replenish credits through the offline app.
+- Usage records to store each user's water consumption history, including the amount of water used and remaining credits, and display this information to the user when prompted.
+- Persistent user accounts to store user information and credit balances in non-volatile memory or an external database, such as a cloud service, so that information is not lost when the Arduino restarts.
+- Monitoring and reporting to provide the supplier with information about water consumption, remaining credits, and overall system usage.
 - Automatic leak detection.
 - More sophisticated authentication.
 
 ## License
 
-This project is currently to be used for educational purposes and is still a prototype, so the user credits are currently defined in the program itself and are reset when the Arduino restarts or when a new RFID session is created.
+This project is currently intended for educational purposes and is still a prototype. As such, the user credits are currently defined in the program itself and are reset when the Arduino restarts or when a new RFID session is created.
 
 ## Project Goals
 
-My aim is to develop the prototype into a full practical water management and billing system that encourages responsible water consumption and usage while providing a simpler user interface for the monitoring and management of water usage.
+The aim is to develop the prototype into a full practical water management and billing system that encourages responsible water consumption while providing a simpler interface for monitoring and managing water usage.
